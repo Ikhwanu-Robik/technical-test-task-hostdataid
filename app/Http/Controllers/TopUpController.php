@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrderStatus;
+use App\Models\CallbackLog;
 use Carbon\Carbon;
 use App\Models\Order;
 use App\Models\Product;
@@ -80,9 +81,6 @@ class TopUpController extends Controller
                 ]
             ]);
 
-            // TODO: call main callback
-            // TODO: turn callback calling into an async job
-            // so it can run in the background
             // EXPLANATION:
             // we are faking a request to ensure this code can run
             // in single-thread server.
@@ -100,9 +98,13 @@ class TopUpController extends Controller
                     'callback_message' => 'Top-up simulation completed',
                 ])
             );
-            app()->handle($fakeRequest);
+            $response = app()->handle($fakeRequest);
 
-            return successResponse($validated, 'Callback trigger proccessed');
+            if ($response->isOk()) {
+                return successResponse($validated, 'Callback trigger proccessed');
+            }
+
+            return $response;
         } catch (ValidationException $e) {
             $validator = $e->validator;
             return validationErrorResponse($validator->errors()->toArray());
@@ -114,6 +116,33 @@ class TopUpController extends Controller
 
     public function callback(Request $request)
     {
+        try {
+            $validated = $request->validate([
+                'reference_id' => 'required|max:64|exists:orders,reference_id',
+                'callback_status' => [
+                    'required',
+                    Rule::enum(OrderStatus::class)->only([
+                        OrderStatus::SUCCESS,
+                        OrderStatus::FAILED,
+                    ]),
+                ],
+                'callback_message' => 'required|string'
+            ]);
 
+            $order = Order::where('reference_id', $validated['reference_id'])
+                ->first();
+            $order->status = $validated['callback_status'];
+            $order->save();
+
+            CallbackLog::create(['data' => json_encode($validated)]);
+
+            return successResponse($order, 'Updated order status');
+        } catch (ValidationException $e) {
+            $validator = $e->validator;
+            return validationErrorResponse($validator->errors()->toArray());
+        } catch (\Exception $e) {
+            logger()->error($e->getMessage());
+            return serverErrorResponse();
+        }
     }
 }
