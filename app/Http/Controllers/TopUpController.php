@@ -28,7 +28,7 @@ class TopUpController extends Controller
                 !Product::where('code', $validated['game_code'])
                     ->exists()
             ) {
-                return rejectedResponse('Game code not found');
+                return notFoundResponse('Game code not found');
             }
 
             // reject if there is an order with the same 
@@ -71,7 +71,7 @@ class TopUpController extends Controller
     {
         try {
             $validated = $request->validate([
-                'reference_id' => 'required|max:64|exists:orders,reference_id',
+                'reference_id' => 'required|max:64',
                 'callback_status' => [
                     'required',
                     Rule::enum(OrderStatus::class)->only([
@@ -80,6 +80,14 @@ class TopUpController extends Controller
                     ]),
                 ]
             ]);
+
+            // reject if order not found
+            if (
+                !Order::where('reference_id', $validated['reference_id'])
+                    ->exists()
+            ) {
+                return notFoundResponse('Order not found');
+            }
 
             // EXPLANATION:
             // we are faking a request to ensure this code can run
@@ -118,7 +126,7 @@ class TopUpController extends Controller
     {
         try {
             $validated = $request->validate([
-                'reference_id' => 'required|max:64|exists:orders,reference_id',
+                'reference_id' => 'required|max:64',
                 'callback_status' => [
                     'required',
                     Rule::enum(OrderStatus::class)->only([
@@ -128,6 +136,14 @@ class TopUpController extends Controller
                 ],
                 'callback_message' => 'required|string'
             ]);
+
+            // reject if order not found
+            if (
+                !Order::where('reference_id', $validated['reference_id'])
+                    ->exists()
+            ) {
+                return notFoundResponse('Order not found');
+            }
 
             $order = Order::where('reference_id', $validated['reference_id'])
                 ->first();
