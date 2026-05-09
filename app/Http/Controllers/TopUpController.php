@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use Carbon\Carbon;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class TopUpController extends Controller
@@ -13,11 +15,6 @@ class TopUpController extends Controller
     public function createOrder(Request $request)
     {
         try {
-            // reject if request body is not a valid JSON
-            if (!json_validate($request->getContent())) {
-                return rejectedResponse('Request body must be a valid JSON');
-            }
-
             $validated = $request->validate([
                 'user_id' => 'required|numeric|gt:0',
                 'game_code' => 'required|max:32',
@@ -49,7 +46,7 @@ class TopUpController extends Controller
                 'reference_id' => $validated['reference_id'],
                 'game_code' => $validated['game_code'],
                 'amount' => $validated['amount'],
-                'status' => 'pending',
+                'status' => OrderStatus::PENDING->value,
             ]);
 
             return successResponse(
@@ -67,5 +64,56 @@ class TopUpController extends Controller
             logger()->error($e->getMessage());
             return serverErrorResponse();
         }
+    }
+
+    public function triggerCallback(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'reference_id' => 'required|max:64|exists:orders,reference_id',
+                'callback_status' => [
+                    'required',
+                    Rule::enum(OrderStatus::class)->only([
+                        OrderStatus::SUCCESS,
+                        OrderStatus::FAILED,
+                    ]),
+                ]
+            ]);
+
+            // TODO: call main callback
+            // TODO: turn callback calling into an async job
+            // so it can run in the background
+            // EXPLANATION:
+            // we are faking a request to ensure this code can run
+            // in single-thread server.
+            // In real scenario, the trigger and the callback should
+            // be in a different app
+            $fakeRequest = Request::create(
+                '/api/game/topup/callback',
+                'POST',
+                [],
+                [],
+                [],
+                $_SERVER,
+                json_encode([
+                    ...$validated,
+                    'callback_message' => 'Top-up simulation completed',
+                ])
+            );
+            app()->handle($fakeRequest);
+
+            return successResponse($validated, 'Callback trigger proccessed');
+        } catch (ValidationException $e) {
+            $validator = $e->validator;
+            return validationErrorResponse($validator->errors()->toArray());
+        } catch (\Exception $e) {
+            logger()->error($e->getMessage());
+            return serverErrorResponse();
+        }
+    }
+
+    public function callback(Request $request)
+    {
+
     }
 }

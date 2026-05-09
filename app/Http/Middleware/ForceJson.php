@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ForceJsonResponse
+class ForceJson
 {
     /**
      * Handle an incoming request.
@@ -15,6 +15,11 @@ class ForceJsonResponse
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // reject if request body is not a valid JSON
+        if (!json_validate($request->getContent())) {
+            return rejectedResponse('Request body must be a valid JSON');
+        }
+
         $request->headers->set('Accept', 'application/json');
         return $next($request);
     }
