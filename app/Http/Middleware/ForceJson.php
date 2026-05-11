@@ -17,7 +17,7 @@ class ForceJson
     {
         // reject if request body is not a valid JSON
         if (!json_validate($request->getContent())) {
-            return rejectedResponse('Request body must be a valid JSON', 400);
+            return errorResponse('Request body must be a valid JSON', 400);
         }
 
         $request->headers->set('Accept', 'application/json');

@@ -28,7 +28,7 @@ class TopUpController extends Controller
                 !Product::where('code', $validated['game_code'])
                     ->exists()
             ) {
-                return notFoundResponse('Game code not found');
+                return rejectedResponse('Game code not found', 404);
             }
 
             // reject if there is an order with the same 
@@ -86,7 +86,7 @@ class TopUpController extends Controller
                 !Order::where('reference_id', $validated['reference_id'])
                     ->exists()
             ) {
-                return notFoundResponse('Order not found');
+                return rejectedResponse('Order not found', 404);
             }
 
             // EXPLANATION:
@@ -142,7 +142,7 @@ class TopUpController extends Controller
                 !Order::where('reference_id', $validated['reference_id'])
                     ->exists()
             ) {
-                return notFoundResponse('Order not found');
+                return rejectedResponse('Order not found', 404);
             }
 
             $order = Order::where('reference_id', $validated['reference_id'])
