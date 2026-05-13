@@ -58,14 +58,6 @@ CREATE TABLE `callback_logs` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `callback_logs`
---
-
-INSERT INTO `callback_logs` (`id`, `data`, `created_at`, `updated_at`) VALUES
-(1, '\"{\\\"reference_id\\\":\\\"ORDER-20260408-0001\\\",\\\"callback_status\\\":\\\"SUCCESS\\\",\\\"callback_message\\\":\\\"Top-up simulation completed\\\"}\"', '2026-05-09 05:44:51', '2026-05-09 05:44:51'),
-(2, '\"{\\\"reference_id\\\":\\\"ORDER-20260408-0001\\\",\\\"callback_status\\\":\\\"SUCCESS\\\",\\\"callback_message\\\":\\\"Top-up simulation completed\\\"}\"', '2026-05-09 05:44:54', '2026-05-09 05:44:54');
-
 -- --------------------------------------------------------
 
 --
